@@ -431,6 +431,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         switch ( event.touches.length ) {
 
+            case 0:
+                state = STATE.NONE;
+                break;
+
             case 2:
 
                     state = STATE.TOUCH_ROTATE;
@@ -452,6 +456,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
             default:
                 state = STATE.NONE;
+                return;
 
         }
         document.addEventListener( 'touchend', touchend, false );

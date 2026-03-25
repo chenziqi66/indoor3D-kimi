@@ -238,7 +238,8 @@ IndoorMap3d = function(mapdiv){
 
     //select object(just hight light it)
     function select(obj){
-        obj.currentHex = _selected.material.color.getHex();
+        if(!obj || !obj.material) return;
+        obj.currentHex = obj.material.color.getHex();
         obj.material.color = new THREE.Color(_theme.selected);
         obj.scale = new THREE.Vector3(2,2,2);
     }
@@ -260,7 +261,10 @@ IndoorMap3d = function(mapdiv){
 
         _rayCaster.set( _this.camera.position, vector.sub( _this.camera.position ).normalize() );
 
-        var intersects = _rayCaster.intersectObjects( _this.mall.root.children[0].children );
+        var intersects = [];
+        if (_this.mall && _this.mall.root && _this.mall.root.children[0] && _this.mall.root.children[0].children) {
+            intersects = _rayCaster.intersectObjects( _this.mall.root.children[0].children );
+        }
 
         if ( intersects.length > 0 ) {
 
@@ -269,18 +273,22 @@ IndoorMap3d = function(mapdiv){
                 if ( _selected ) {
                     _selected.material.color.setHex( _selected.currentHex );
                 }
+                var foundSolidRoom = false;
                 for(var i=0; i<intersects.length; i++) {
-                    _selected = intersects[ i ].object;
-                    if(_selected.type && _selected.type == "solidroom") {
+                    var obj = intersects[ i ].object;
+                    if(obj.type && obj.type == "solidroom") {
+                        _selected = obj;
                         select(_selected);
                         if(_selectionListener) {
                             _selectionListener(_selected.id); //notify the listener
                         }
+                        foundSolidRoom = true;
                         break;
-                    }else{
-                        _selected = null;
                     }
-                    if(_selected == null && _selectionListener != null){
+                }
+                if(!foundSolidRoom) {
+                    _selected = null;
+                    if(_selectionListener != null){
                         _selectionListener(-1);
                     }
                 }
@@ -396,14 +404,14 @@ IndoorMap3d = function(mapdiv){
                 var imgWidthHalf1 = sprite.width / 2;
                 var imgHeightHalf1 = sprite.height / 2;
                 var rect1 = new Rect(sprite.position.x - imgWidthHalf1, sprite.position.y - imgHeightHalf1,
-                        sprite.position.x + imgHeightHalf1, sprite.position.y + imgHeightHalf1 );
+                        sprite.position.x + imgWidthHalf1, sprite.position.y + imgHeightHalf1 );
 
                 var sprite2 = spritelist.children[j];
                 var sprite2Pos = sprite2.position;
                 var imgWidthHalf2 = sprite2.width / 2;
                 var imgHeightHalf2 = sprite2.height / 2;
                 var rect2 = new Rect(sprite2Pos.x - imgWidthHalf2, sprite2Pos.y - imgHeightHalf2,
-                        sprite2Pos.x + imgHeightHalf2, sprite2Pos.y + imgHeightHalf2 );
+                        sprite2Pos.x + imgWidthHalf2, sprite2Pos.y + imgHeightHalf2 );
 
                 if(sprite2.visible && rect1.isCollide(rect2)){
                     visible = false;
@@ -412,8 +420,12 @@ IndoorMap3d = function(mapdiv){
 
                 rect1.tl[0] -= visibleMargin;
                 rect1.tl[1] -= visibleMargin;
+                rect1.br[0] += visibleMargin;
+                rect1.br[1] += visibleMargin;
                 rect2.tl[0] -= visibleMargin;
                 rect2.tl[1] -= visibleMargin;
+                rect2.br[0] += visibleMargin;
+                rect2.br[1] += visibleMargin;
 
 
                 if(sprite.visible == false && rect1.isCollide(rect2)){
